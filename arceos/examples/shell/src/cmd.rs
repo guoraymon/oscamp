@@ -1,5 +1,7 @@
+use core::clone;
 use std::fs::{self, File, FileType};
 use std::io::{self, prelude::*};
+use std::string::ToString;
 use std::{string::String, vec::Vec};
 
 #[cfg(all(not(feature = "axstd"), unix))]
@@ -27,6 +29,8 @@ const CMD_TABLE: &[(&str, CmdHandler)] = &[
     ("pwd", do_pwd),
     ("rm", do_rm),
     ("uname", do_uname),
+    ("rename", do_rename),
+    ("mv", do_mv),
 ];
 
 fn file_type_to_char(ty: FileType) -> char {
@@ -260,6 +264,35 @@ fn do_uname(_args: &str) {
     );
 }
 
+fn do_rename(args: &str) {
+    if args.is_empty() {
+        print_err!("rename", "missing operand");
+        return;
+    }
+    let (old_path, new_path) = split_whitespace(args);
+    println!("{} -> {}", old_path, new_path);
+    fs::rename(old_path, new_path);
+}
+
+fn do_mv(args: &str) {
+    if args.is_empty() {
+        print_err!("mv", "missing operand");
+        return;
+    }
+    let (old_path, new_path) = split_whitespace(args);
+    let target_path = if fs::metadata(new_path).unwrap().is_dir() {
+        if new_path == "/" {
+            get_basename(old_path)
+        } else {
+            format!("{}/{}", new_path, get_basename(old_path))
+        }
+    } else {
+        new_path.to_string()
+    };
+    println!("{} -> {}", old_path, target_path);
+    fs::rename(old_path, &target_path);
+}
+
 fn do_help(_args: &str) {
     println!("Available commands:");
     for (name, _) in CMD_TABLE {
@@ -290,4 +323,10 @@ fn split_whitespace(str: &str) -> (&str, &str) {
     let str = str.trim();
     str.find(char::is_whitespace)
         .map_or((str, ""), |n| (&str[..n], str[n + 1..].trim()))
+}
+
+fn get_basename(file_path: &str) -> String {
+    let mut parts = file_path.split('/').collect::<Vec<&str>>();
+    let basename = parts.pop().unwrap();
+    basename.to_string()
 }
