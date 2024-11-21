@@ -57,12 +57,12 @@ impl LabByteAllocator {
 
 impl BaseAllocator for LabByteAllocator {
     fn init(&mut self, start: usize, size: usize) {
-        axlog::debug!(
-            "LabByteAllocator init: [{:#x}, {:#x}) {}",
-            start,
-            start + size,
-            size
-        );
+        // axlog::debug!(
+        //     "LabByteAllocator init: [{:#x}, {:#x}) {}",
+        //     start,
+        //     start + size,
+        //     size
+        // );
         self.start = start;
         self.end = start + size;
         self.l_pos = start + POOL_SAVE + ITEMS_SAVE;
